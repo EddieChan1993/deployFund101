@@ -18,13 +18,17 @@ interface IFundMe {
 **/
 contract FundMe {
     mapping(address => uint256) public funderMAmount;
-    uint256 constant MIN_VAL = 100 * 10 ** 18; //USD
-    uint256 constant TARGET = 50 * 10 ** 18; //USD
+    uint256 constant MIN_VAL = 100 * 10 ** 18; //100 USD
+    uint256 constant TARGET = 1000 * 10 ** 18; //1000 USD
     AggregatorV3Interface public dataFeed;
     address public owner;
     uint256 public endCd;
     uint256 public deTiemAt;
     address public  ERC20Addr;
+
+    event fundWithdrawByOwner(uint256);
+    event fundWithRe(address, uint256);
+
     constructor(uint256 _endCd, address dataFeedAddr) {
         //Sepolia Testnet ETH / USD
         dataFeed = AggregatorV3Interface(
@@ -43,15 +47,19 @@ contract FundMe {
     function getFound() external foundClose {
         require(convertEthToUsd(address(this).balance) >= TARGET, "Target no");
         require(msg.sender == owner, "no owner");
-        payable(msg.sender).transfer(address(this).balance);
+        uint256 balanceFund = address(this).balance;
+        payable(msg.sender).transfer(balanceFund);
         funderMAmount[msg.sender] = 0;
+        emit fundWithdrawByOwner(balanceFund);
     }
     //return fund
     function reFund() external foundClose {
         require(convertEthToUsd(address(this).balance) < TARGET, "Target Ok");
         require(funderMAmount[msg.sender] != 0, "no fund");
-        payable(msg.sender).transfer(funderMAmount[msg.sender]);
+        uint256 balanceFund = funderMAmount[msg.sender];
+        payable(msg.sender).transfer(balanceFund);
         funderMAmount[msg.sender] = 0;
+        emit fundWithRe(msg.sender, balanceFund);
     }
 
     /**

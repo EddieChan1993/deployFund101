@@ -5,7 +5,9 @@ const helpers = require("@nomicfoundation/hardhat-network-helpers");
 // 定义测试套件
 describe("test fundme contract", async function () {
     let fundMe; // 存储 FundMe 合约实例
+    let fundMeSecAcc;
     let firstAccount; // 存储部署者账户地址
+    let secondAccount; // 存储部署者账户地址
     let mockV3Aggregator;
     // 在每个测试用例前重置合约状态
     beforeEach(async function () {
@@ -14,6 +16,7 @@ describe("test fundme contract", async function () {
 
         // 获取配置中预定义的账户（需在 hardhat.config.js 的 namedAccounts 中定义）
         firstAccount = (await getNamedAccounts()).firstAccount;
+        secondAccount = (await getNamedAccounts()).secondAccount;
 
         // 获取 FundMe 合约的部署信息（地址、ABI 等）
         const fundMeDeployment = await deployments.get("FundMe");
@@ -24,6 +27,8 @@ describe("test fundme contract", async function () {
         );
 
         mockV3Aggregator = await deployments.get("MockV3Aggregator");
+
+        fundMeSecAcc = await ethers.getContract("FundMe", secondAccount)
     });
 
     // 测试用例 1：验证合约所有者是否正确
@@ -44,21 +49,71 @@ describe("test fundme contract", async function () {
         assert.equal(await fundMe.dataFeed(), mockV3Aggregator.address // Sepolia 测试网 ETH/USD 预言机地址
         );
     });
-
-    //fundMe.fund
-    it('window close', async function () {
+    /*-------------getFound---------------*/
+    it('fund window close', async function () {
         await helpers.time.increase(200);
         await helpers.mine()
         expect(fundMe.fund({value: ethers.parseEther("0.1")})).to.be.revertedWith("fund close")//wei
     });
 
-    it('value < min', async function () {
+    it('fund value < min', async function () {
         expect(fundMe.fund({value: ethers.parseEther("0.000001")})).to.be.revertedWith("Ether need more")//wei
     });
 
-    it('fund balance', async function () {
+    it('fund fund success', async function () {
         await fundMe.fund({value: ethers.parseEther("0.1")})
         const balance = await fundMe.funderMAmount(firstAccount)
-        expect(balance).to.equal(ethers.parseEther("0.1"))
+        assert.equal(balance, ethers.parseEther("0.1"))
+    });
+    /*-------------getFound---------------*/
+    it('getFound no owner', async function () {
+        await fundMe.fund({value: ethers.parseEther("1")})
+        await helpers.time.increase(200);
+        await helpers.mine()
+        await expect(fundMeSecAcc.getFound()).to.be.revertedWith("no owner")//wei
+    });
+
+    it('getFound window open', async function () {
+        await expect(fundMe.getFound()).to.be.revertedWith("fund doing")//wei
+    });
+
+    it('getFound balance< target', async function () {
+        await fundMe.fund({value: ethers.parseEther("0.1")})
+        await helpers.time.increase(200);
+        await helpers.mine()
+        await expect(fundMe.getFound()).to.be.revertedWith("Target no")//wei
+    });
+
+    it('getFound success', async function () {
+        await fundMe.fund({value: ethers.parseEther("1")})
+        await helpers.time.increase(200);
+        await helpers.mine()
+        await expect(fundMe.getFound()).to.emit(fundMe, "fundWithdrawByOwner")
+            .withArgs(ethers.parseEther("1"))
+    });
+    /*-------------reFund---------------*/
+    it('reFund no fund', async function () {
+        await helpers.time.increase(200);
+        await helpers.mine()
+        await expect(fundMe.reFund()).to.be.revertedWith("no fund")//wei
+    });
+
+    it('reFund Target Ok', async function () {
+        await fundMe.fund({value: ethers.parseEther("1")})
+        await helpers.time.increase(200);
+        await helpers.mine()
+        await expect(fundMe.reFund()).to.be.revertedWith("Target Ok")//wei
+    });
+
+    it('getFound window open', async function () {
+        await expect(fundMe.reFund()).to.be.revertedWith("fund doing")//wei
+    });
+
+    it('reFund success', async function () {
+        await fundMeSecAcc.fund({value: ethers.parseEther("0.1")})
+        await helpers.time.increase(200);
+        await helpers.mine()
+        await expect(fundMeSecAcc.reFund()).to.emit(fundMe, "fundWithRe")
+            .withArgs(secondAccount, ethers.parseEther("0.1"))
     });
 });

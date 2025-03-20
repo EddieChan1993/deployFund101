@@ -1,5 +1,5 @@
 const DECIMAL = 8
-const INITIAL_ANSWER = 300000000000
+const INITIAL_ANSWER = 300000000000 //1Ether=3000USD
 const devChains = ["hardhat", "local"]
 const END_CD = 180
 //https://chainlist.org/ chainID查找

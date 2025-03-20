@@ -2,7 +2,9 @@
 require("@nomicfoundation/hardhat-toolbox"); // Hardhat 官方工具包（包含 Ethers、Waffle 等）
 require("@chainlink/env-enc").config();      // Chainlink 环境变量加密工具（替代 dotenv）
 require("./tasks");                          // 自定义 Hardhat 任务（如果存在 tasks/ 目录）
-require("hardhat-deploy");                   // 合约部署管理插件
+require("@nomicfoundation/hardhat-ethers");
+require("hardhat-deploy");
+require("hardhat-deploy-ethers");
 
 // 从加密环境变量中读取敏感信息
 const SEPOLIA_URL = process.env.SEPOLIA_URL;       // Sepolia 测试网节点 RPC URL

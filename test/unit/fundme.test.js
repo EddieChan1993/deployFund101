@@ -1,12 +1,12 @@
 // 引入依赖库
 const {ethers, deployments, getNamedAccounts} = require("hardhat"); // Hardhat 核心库
-const {assert} = require("chai"); // 断言库
-
+const {assert, expect} = require("chai"); // 断言库
+const helpers = require("@nomicfoundation/hardhat-network-helpers");
 // 定义测试套件
 describe("test fundme contract", async function () {
     let fundMe; // 存储 FundMe 合约实例
     let firstAccount; // 存储部署者账户地址
-
+    let mockV3Aggregator;
     // 在每个测试用例前重置合约状态
     beforeEach(async function () {
         // 重新部署所有带 "all" 标签的合约（依赖 hardhat-deploy 插件）
@@ -22,6 +22,8 @@ describe("test fundme contract", async function () {
         fundMe = await ethers.getContractAt("FundMe", // 合约名称
             fundMeDeployment.address // 合约部署地址
         );
+
+        mockV3Aggregator = await deployments.get("MockV3Aggregator");
     });
 
     // 测试用例 1：验证合约所有者是否正确
@@ -39,7 +41,24 @@ describe("test fundme contract", async function () {
         await fundMe.waitForDeployment();
 
         // 断言：合约的 dataFeed() 返回值应等于预设的 Chainlink 地址
-        assert.equal(await fundMe.dataFeed(), "0x694AA1769357215DE4FAC081bf1f309aDC325306" // Sepolia 测试网 ETH/USD 预言机地址
+        assert.equal(await fundMe.dataFeed(), mockV3Aggregator.address // Sepolia 测试网 ETH/USD 预言机地址
         );
+    });
+
+    //fundMe.fund
+    it('window close', async function () {
+        await helpers.time.increase(200);
+        await helpers.mine()
+        expect(fundMe.fund({value: ethers.parseEther("0.1")})).to.be.revertedWith("fund close")//wei
+    });
+
+    it('value < min', async function () {
+        expect(fundMe.fund({value: ethers.parseEther("0.000001")})).to.be.revertedWith("Ether need more")//wei
+    });
+
+    it('fund balance', async function () {
+        await fundMe.fund({value: ethers.parseEther("0.1")})
+        const balance = await fundMe.funderMAmount(firstAccount)
+        expect(balance).to.equal(ethers.parseEther("0.1"))
     });
 });

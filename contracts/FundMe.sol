@@ -35,8 +35,8 @@ contract FundMe {
         endCd = _endCd;
     }
     function fund() external payable {
-        require(convertEthToUsd(msg.value) >= MIN_VAL, "SEND MORE");
-        require(block.timestamp < deTiemAt + endCd, "fund close");
+        require(convertEthToUsd(msg.value) >= MIN_VAL, "Ether need more");
+        require(block.timestamp < deTiemAt + endCd, "Fund close");
         funderMAmount[msg.sender] = msg.value;
     }
     //draw fund

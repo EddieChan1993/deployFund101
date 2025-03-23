@@ -15,8 +15,9 @@ const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY; // Etherscan API 密钥
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
     solidity: "0.8.28", // Solidity 编译器版本（需与合约版本匹配）
-
-    // 网络配置
+    mocha: {
+        timeout: 300000//mocha 测试框架默认最大超时时间单位秒
+    }, // 网络配置
     networks: {
         sepolia: {
             url: SEPOLIA_URL,          // Sepolia 测试网的 RPC 节点 URL
@@ -36,9 +37,11 @@ module.exports = {
     namedAccounts: {
         firstAccount: {
             default: 0, // 默认使用 accounts[0]（即 PRIVATE_KEY 对应的账户）
-        },
-        secondAccount: {
+        }, secondAccount: {
             default: 1, // 默认使用 accounts[1]（即 PRIVATE_KEY2 对应的账户）
         }
+    },
+    gasReporter: {
+        enabled: false,
     }
 };

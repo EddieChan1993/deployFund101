@@ -44,7 +44,7 @@ contract FundMe {
         funderMAmount[msg.sender] = msg.value;
     }
     //draw fund
-    function getFound() external foundClose {
+    function getFund() external foundClose {
         require(convertEthToUsd(address(this).balance) >= TARGET, "Target no");
         require(msg.sender == owner, "no owner");
         uint256 balanceFund = address(this).balance;

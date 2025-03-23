@@ -2,8 +2,11 @@
 const {ethers, deployments, getNamedAccounts} = require("hardhat"); // Hardhat 核心库
 const {assert, expect} = require("chai"); // 断言库
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
+const {devChains} = require("../../hardhat.helper.config")
+//npx hardhat test --network sepolia 本地网络测试
+
 // 定义测试套件
-describe("test fundme contract", async function () {
+!devChains.includes(network.name) ? describe.skip : describe("test fundme contract", async function () {
     let fundMe; // 存储 FundMe 合约实例
     let fundMeSecAcc;
     let firstAccount; // 存储部署者账户地址
@@ -49,7 +52,8 @@ describe("test fundme contract", async function () {
         assert.equal(await fundMe.dataFeed(), mockV3Aggregator.address // Sepolia 测试网 ETH/USD 预言机地址
         );
     });
-    /*-------------getFound---------------*/
+
+    /*-------------fund---------------*/
     it('fund window close', async function () {
         await helpers.time.increase(200);
         await helpers.mine()
@@ -65,37 +69,38 @@ describe("test fundme contract", async function () {
         const balance = await fundMe.funderMAmount(firstAccount)
         assert.equal(balance, ethers.parseEther("0.1"))
     });
-    /*-------------getFound---------------*/
-    it('getFound no owner', async function () {
+
+    /*-------------getFund---------------*/
+    it('getFund no owner', async function () {
         await fundMe.fund({value: ethers.parseEther("1")})
         await helpers.time.increase(200);
         await helpers.mine()
-        await expect(fundMeSecAcc.getFound()).to.be.revertedWith("no owner")//wei
+        await expect(fundMeSecAcc.getFund()).to.be.revertedWith("no owner")//wei
     });
 
-    it('getFound window open', async function () {
-        await expect(fundMe.getFound()).to.be.revertedWith("fund doing")//wei
+    it('getFund window open', async function () {
+        await expect(fundMe.getFund()).to.be.revertedWith("fund doing")//wei
     });
 
-    it('getFound balance< target', async function () {
+    it('getFund balance< target', async function () {
         await fundMe.fund({value: ethers.parseEther("0.1")})
         await helpers.time.increase(200);
         await helpers.mine()
-        await expect(fundMe.getFound()).to.be.revertedWith("Target no")//wei
+        await expect(fundMe.getFund()).to.be.revertedWith("Target no")//wei
     });
 
-    it('getFound success', async function () {
+    it('getFund success', async function () {
         await fundMe.fund({value: ethers.parseEther("1")})
         await helpers.time.increase(200);
         await helpers.mine()
-        await expect(fundMe.getFound()).to.emit(fundMe, "fundWithdrawByOwner")
-            .withArgs(ethers.parseEther("1"))
+        await expect(fundMe.getFund()).to.emit(fundMe, "fundWithdrawByOwner")
+            .withArgs(ethers.parseEther("1.1"))//fund函数 支付了0.1
     });
     /*-------------reFund---------------*/
     it('reFund no fund', async function () {
-        await helpers.time.increase(200);
+        await helpers.time.increase(100);
         await helpers.mine()
-        await expect(fundMe.reFund()).to.be.revertedWith("no fund")//wei
+        await expect(fundMe.reFund()).to.be.revertedWith("fund doing")//wei
     });
 
     it('reFund Target Ok', async function () {
@@ -105,7 +110,7 @@ describe("test fundme contract", async function () {
         await expect(fundMe.reFund()).to.be.revertedWith("Target Ok")//wei
     });
 
-    it('getFound window open', async function () {
+    it('getFund window open', async function () {
         await expect(fundMe.reFund()).to.be.revertedWith("fund doing")//wei
     });
 

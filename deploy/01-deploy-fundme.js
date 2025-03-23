@@ -21,13 +21,13 @@ module.exports = async ({getNamedAccounts, deployments}) => {
     const {deploy} = deployments;
     let chainId = 11155111
     let dataFeedAddr
-    let waitBlock = 5
+    let waitBlock
     if (devChains.includes(network.name)) {
         const mockFeedDataContract = await deployments.get("MockV3Aggregator")
         dataFeedAddr = mockFeedDataContract.address
-        waitBlock = 0
     } else {
-        dataFeedAddr = networkConfig[network.config.chainId].etherUSDDataFeed
+        dataFeedAddr = networkConfig[network.config.chainId].etherUSDDataFeed;
+        waitBlock = 5
     }
     // 3. 执行部署动作：部署名为 "FundMe" 的合约
     const fundMe = await deploy("FundMe", {
@@ -36,8 +36,6 @@ module.exports = async ({getNamedAccounts, deployments}) => {
         log: true,               // 打印部署日志（方便调试）
         waitConfirmations: waitBlock
     });
-    //remove deployments dir or add --reset flag if you redeploy contract
-
     if (hre.network.config.chainId == chainId && process.env.ETHERSCAN_API_KEY) {
         await hre.run("verify:verify", {
             address: fundMe.address, constructorArguments: [END_CD, dataFeedAddr],
